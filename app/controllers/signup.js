@@ -44,8 +44,11 @@ export default Controller.extend({
         this.get('signupDetails.hasValidated').addObjects(setupProperties);
 
         try {
+            let captchaToken = yield grecaptcha.execute(window.recaptchaKey, {action: 'signup'}); 
             yield this.signupDetails.validate();
-            yield this._completeInvitation();
+            //hack: require captcha
+            // yield this._completeInvitation();            
+            yield this._completeInvitation(captchaToken);
 
             try {
                 yield this._authenticateWithPassword();
@@ -71,7 +74,11 @@ export default Controller.extend({
         }
     }).drop(),
 
-    _completeInvitation() {
+    _getCaptchaToken() {
+        return grecaptcha.execute(window.recaptchaKey, {action: 'signup'});
+    },
+
+    _completeInvitation(captchaToken) {
         let authUrl = this.get('ghostPaths.url').api('authentication', 'invitation');
         let signupDetails = this.signupDetails;
 
@@ -82,7 +89,8 @@ export default Controller.extend({
                     name: signupDetails.get('name'),
                     email: signupDetails.get('email'),
                     password: signupDetails.get('password'),
-                    token: signupDetails.get('token')
+                    token: signupDetails.get('token'),
+                    captchaToken: captchaToken
                 }]
             }
         });
